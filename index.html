@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Find your time: a comic quiz from DOTX. Meet Aarav, Zoya and Kabir, and find out which one you are most like.">
+<title>Find Your Time</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap">
+<style>
+/* Layout: one comic "page" column; each quiz step is a single bordered panel, Stitch Fix style (one question per screen) */
+:root{
+  --sky:#e6f2fb;          /* book's sky-blue page ground */
+  --paper:#ffffff;
+  --ink:#17132b;
+  --muted:#4d4868;
+  --line:#17132b;
+  --samay:#7a4cc8;        /* Samay purple */
+  --samay-soft:#efe7fb;
+  --on-samay:#ffffff;
+  --aarav:#6db83c;
+  --zoya:#d43a3f;
+  --kabir:#f2c230;
+  --dot:rgba(23,19,43,.10);
+  --shadow:#17132b;
+  --display:"Bangers","Impact","Arial Black",sans-serif;
+  --body:"Comic Neue","Comic Sans MS","Chalkboard SE",ui-rounded,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --sky:#141127;--paper:#221d3d;--ink:#f3f0ff;--muted:#bdb6dd;--line:#e9e4ff;
+  --samay:#b693f2;--samay-soft:#2e2552;--on-samay:#17132b;--dot:rgba(233,228,255,.08);--shadow:#000;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --sky:#141127;--paper:#221d3d;--ink:#f3f0ff;--muted:#bdb6dd;--line:#e9e4ff;
+  --samay:#b693f2;--samay-soft:#2e2552;--on-samay:#17132b;--dot:rgba(233,228,255,.08);--shadow:#000;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--sky);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;
+  background-image:radial-gradient(var(--dot) 1.4px,transparent 1.6px);background-size:14px 14px;
+}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mast{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.logo{font-family:var(--display);font-size:30px;letter-spacing:1px;line-height:1}
+.logo b{color:var(--samay);font-weight:400}
+.issue{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel{background:var(--paper);border:3px solid var(--line);box-shadow:6px 6px 0 var(--shadow);border-radius:4px;overflow:hidden}
+.panel + .panel{margin-top:20px}
+h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.5px;margin:0;line-height:1.05;text-wrap:balance}
+h1{font-size:clamp(44px,9vw,76px)}
+h2{font-size:clamp(30px,6vw,42px)}
+h3{font-size:26px}
+img{display:block;max-width:100%}
+.btn{font-family:var(--display);font-size:24px;letter-spacing:1px;background:var(--samay);color:var(--on-samay);border:3px solid var(--line);
+  box-shadow:4px 4px 0 var(--shadow);padding:10px 26px;border-radius:4px;cursor:pointer;transition:transform .08s}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--shadow)}
+.btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--shadow)}
+.btn.ghost{background:var(--paper);color:var(--ink)}
+button:focus-visible,.opt:focus-visible{outline:3px solid var(--samay);outline-offset:3px}
+
+/* cover */
+.cover-art{position:relative;border-bottom:3px solid var(--line)}
+.cover-art img{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:center 30%}
+.burst{position:absolute;left:14px;top:14px;background:var(--kabir);color:#17132b;font-family:var(--display);font-size:22px;
+  padding:8px 16px;border:3px solid #17132b;transform:rotate(-4deg);box-shadow:3px 3px 0 #17132b}
+.cover-body{padding:22px 22px 26px;display:grid;gap:16px}
+.cover-body h1 span{color:var(--samay)}
+.samay-row{display:flex;gap:14px;align-items:flex-start}
+.samay-row img{width:92px;flex:none;border:3px solid var(--line);border-radius:4px;background:#fff}
+.bubble{position:relative;background:var(--samay-soft);border:3px solid var(--line);border-radius:18px;padding:12px 16px;font-size:19px;min-width:0}
+.bubble:before{content:"";position:absolute;left:-14px;top:22px;border:10px solid transparent;border-right:12px solid var(--line);border-left:0}
+.bubble:after{content:"";position:absolute;left:-9px;top:24px;border:8px solid transparent;border-right:10px solid var(--samay-soft);border-left:0}
+.bubble b{color:var(--samay)}
+.cast{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cast figure{margin:0;text-align:center}
+.cast img{width:100%;aspect-ratio:3/4;object-fit:cover;object-position:top;border:3px solid var(--line)}
+.cast figcaption{font-family:var(--display);font-size:22px;margin-top:4px}
+.fine{font-size:14px;color:var(--muted)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+/* question */
+.qtop{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:3px solid var(--line);background:var(--samay);color:var(--on-samay)}
+.qtop .count{font-family:var(--display);font-size:22px;letter-spacing:1px}
+.qtop button{background:none;border:0;color:inherit;font:700 15px var(--body);cursor:pointer;padding:4px 0}
+.prog{display:flex;gap:4px;padding:0 16px;margin-top:12px}
+.prog i{flex:1;height:8px;border:2px solid var(--line);border-radius:2px;background:var(--paper)}
+.prog i.on{background:var(--kabir)}
+.qbody{padding:18px 16px 22px;display:grid;gap:18px}
+.scene{border:3px solid var(--line);max-height:260px;width:100%;object-fit:cover}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.opts{grid-template-columns:1fr}}
+.opt{text-align:left;font:700 18px/1.3 var(--body);color:var(--ink);background:var(--paper);border:3px solid var(--line);
+  border-radius:4px;padding:14px 14px 14px 14px;cursor:pointer;box-shadow:3px 3px 0 var(--shadow);display:flex;gap:10px;align-items:flex-start;transition:transform .08s,background .15s}
+.opt:hover{background:var(--samay-soft);transform:translate(-1px,-1px)}
+.opt.picked{background:var(--kabir);color:#17132b}
+.opt .k{font-family:var(--display);font-size:22px;line-height:1;flex:none;width:28px;height:28px;display:grid;place-items:center;border:2px solid currentColor;border-radius:50%}
+.opt small{display:block;font-weight:400;font-size:15px;color:inherit;opacity:.8}
+.pill{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-radius:3px;vertical-align:-2px;margin-right:6px}
+
+/* result */
+.res-head{padding:18px 18px 6px}
+.match{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:18px;padding:12px 18px 22px;align-items:start}
+@media (max-width:560px){.match{grid-template-columns:1fr}.match .portrait{max-width:220px}}
+.portrait{border:3px solid var(--line);box-shadow:4px 4px 0 var(--shadow)}
+.tag{display:inline-block;font-family:var(--display);font-size:20px;letter-spacing:1px;padding:2px 12px;border:3px solid var(--line);color:#17132b;transform:rotate(-2deg)}
+.match p{margin:8px 0}
+.quote{font-style:italic;border-left:5px solid var(--line);padding-left:12px;margin-top:12px}
+.blend{display:grid;gap:10px;padding:0 18px 20px}
+.bar{display:grid;grid-template-columns:44px 70px minmax(0,1fr) 48px;gap:10px;align-items:center;font-weight:700}
+.bar img{width:44px;height:44px;object-fit:cover;object-position:top;border:2px solid var(--line);border-radius:50%}
+.track{height:20px;border:3px solid var(--line);background:var(--paper);border-radius:3px;overflow:hidden}
+.fill{height:100%;border-right:3px solid var(--line);transition:width .8s ease-out}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.grid2 .panel{margin:0}
+.card{padding:16px 18px 18px;display:grid;gap:8px;align-content:start}
+.label{font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.big{font-family:var(--display);font-size:32px;line-height:1}
+.batt{display:flex;align-items:center;gap:2px}
+.batt .cell{width:58px;height:30px;border:3px solid var(--line);border-radius:3px;padding:2px;display:flex;gap:2px}
+.batt .cell i{flex:1}
+.batt .nub{width:5px;height:12px;background:var(--line);border-radius:0 2px 2px 0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:3px solid var(--line);padding:4px 10px;font-weight:700;border-radius:3px;color:#17132b}
+.tracker{display:grid;gap:8px;padding:0 18px 18px}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border:3px solid var(--line);padding:8px 10px;border-radius:4px}
+.trow span{font-weight:700}
+.trow small{display:block;font-weight:400;color:var(--muted);font-size:14px}
+.lvl{display:flex;gap:6px}
+.lvl button{font:700 15px var(--body);width:40px;height:36px;border:3px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px;cursor:pointer}
+.lvl button[aria-pressed="true"].L{background:var(--zoya);color:#fff}
+.lvl button[aria-pressed="true"].M{background:var(--kabir);color:#17132b}
+.lvl button[aria-pressed="true"].H{background:var(--aarav);color:#17132b}
+.foot{padding:16px 18px 20px;display:grid;gap:14px;border-top:3px solid var(--line)}
+.pillars{width:100%;border-top:3px solid var(--line)}
+.toast{font-weight:700;color:var(--samay)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.pop{animation:pop .25s ease-out}
+@keyframes pop{from{transform:scale(.97);opacity:.6}to{transform:none;opacity:1}}
+</style>
+<script src="config.js"></script>
+<script src="questions.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="logo">DOT<b>X</b> · Find Your Time</div>
+    <div class="issue">Issue 1 · with SAMAY</div>
+  </header>
+  <main id="app" aria-live="polite"></main>
+</div>
+
+<script>
+const IMG={aarav:"img/aarav.jpg",zoya:"img/zoya.jpg",kabir:"img/kabir.jpg",samay:"img/samay.jpg",samay2:"img/samay2.jpg",watch:"img/watch.jpg",
+  classroom:"img/classroom.jpg",bus:"img/bus.jpg",gate:"img/gate.jpg",batteries:"img/batteries.jpg",rhythm:"img/rhythm.jpg",pillars:"img/pillars.jpg"};
+
+const CHAR={
+ a:{name:"Aarav",tag:"The Rocket",color:"var(--aarav)",img:"aarav",
+   about:"You're up early and full of plans. Everyone counts on you.",
+   strong:"Mornings, energy, keeping promises.",
+   watch:"Saying yes to everyone. Your bag gets heavy, and your own work waits.",
+   quote:"“I need that AI. It could help me say no sometimes.” — Aarav"},
+ z:{name:"Zoya",tag:"The Night Spark",color:"var(--zoya)",img:"zoya",
+   about:"You're lively and full of ideas. Your energy wakes up after school.",
+   strong:"Creativity, fun, big ideas.",
+   watch:"Late nights and “one more video”. Your mornings pay for it.",
+   quote:"“Am I just bad at mornings?” “Maybe your night ruined it.” — Zoya and Kabir"},
+ k:{name:"Kabir",tag:"The Planner",color:"var(--kabir)",img:"kabir",
+   about:"You're calm and organised. You think about every detail.",
+   strong:"School hours, notes, planning.",
+   watch:"Waiting for the perfect idea before you start. And waiting for someone else to start your day.",
+   quote:"“So getting up on time is my responsibility, not my mother's!” — Kabir"}
+};
+const PEAK={
+ morning:["Early morning","Do your hardest work before school. Revision sticks best when your battery is full."],
+ school:["During school","Use free periods for homework, like Kabir. Plan something easy for after school."],
+ afternoon:["After school","Do your hardest homework first, before any screen. That's your best hour."],
+ night:["Late at night","That energy is borrowed from tomorrow morning. Try moving it to the evening."]
+};
+const PILLAR={Physical:"#f08a3e",Emotional:"#8fb4e8",Mental:"#86c95f",Spiritual:"#c7a6ea"};
+
+let step=-1, picks=[];
+const app=document.getElementById('app');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function cover(){
+  app.innerHTML=`<section class="panel pop">
+    <div class="cover-art"><img src="${IMG.classroom}" alt="Class 8 B at DOTX Academy listening to Ms. Rao"><div class="burst">6 AM. School gate. Who wins?</div></div>
+    <div class="cover-body">
+      <h1>Find <span>your</span> time</h1>
+      <div class="samay-row"><img src="${IMG.watch}" alt="SAMAY, the AI watch">
+        <div class="bubble">Hi, I'm <b>SAMAY</b>. Ms. Rao says you get me for a whole day! First I need to know you. <b>9 quick questions.</b> No right or wrong answers.</div></div>
+      <div class="cast">
+        ${["a","z","k"].map(c=>`<figure><img src="${IMG[CHAR[c].img]}" alt="${CHAR[c].name}"><figcaption>${CHAR[c].name}?</figcaption></figure>`).join("")}
+      </div>
+      <p style="margin:0">Same morning, same time, totally different energy. Which one are you most like?</p>
+      <div class="row"><button class="btn" id="start">Start</button><span class="fine">No sign-up. We save your answers without your name, to make SAMAY better.</span></div>
+    </div></section>`;
+  document.getElementById('start').onclick=()=>{step=0;picks=[];track('quiz_start');render();};
+}
+
+function question(){
+  const q=Q[step];
+  app.innerHTML=`<section class="panel pop">
+    <div class="qtop"><span class="count">Panel ${step+1} of ${Q.length}</span><button id="back">← Back</button></div>
+    <div class="prog">${Q.map((_,i)=>`<i class="${i<=step?'on':''}"></i>`).join("")}</div>
+    <div class="qbody">
+      ${q.img?`<img class="scene" src="${IMG[q.img]}" alt="">`:""}
+      <div class="samay-row"><img src="${IMG.samay}" alt="SAMAY"><div class="bubble">${esc(q.q)}</div></div>
+      <div class="opts">${q.opts.map((o,i)=>{
+        const sw=q.opts[0].drain||q.opts[0].charge?`<span class="pill" style="background:${PILLAR[o.drain||o.charge]}"></span>`:"";
+        return `<button class="opt ${picks[step]===i?'picked':''}" data-i="${i}"><span class="k">${"ABCD"[i]}</span><span>${sw}${esc(o.t)}${o.s?`<small>${esc(o.s)}</small>`:""}</span></button>`}).join("")}</div>
+    </div></section>`;
+  document.getElementById('back').onclick=()=>{step--;render();};
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    picks[step]=+b.dataset.i; b.classList.add('picked');
+    track('answer',{q:step,opt:picks[step]});
+    setTimeout(()=>{step++;render();window.scrollTo({top:0,behavior:'smooth'});},260);
+  });
+}
+
+function score(p){
+  const s={a:0,z:0,k:0},meta={};
+  p.forEach((oi,qi)=>{const o=Q[qi].opts[oi];for(const c in o.w)s[c]+=o.w[c];
+    ["sleep","peak","drain","charge"].forEach(m=>{if(o[m]!==undefined)meta[m]=o[m];});});
+  const tot=s.a+s.z+s.k;
+  const pct=tot?{a:Math.round(100*s.a/tot),z:Math.round(100*s.z/tot),k:Math.round(100*s.k/tot)}:{a:34,z:33,k:33};
+  const top=Object.keys(s).sort((x,y)=>s[y]-s[x])[0];
+  const steady=p.filter((oi,qi)=>Object.keys(Q[qi].opts[oi].w).length===0 && !Q[qi].opts[oi].drain && !Q[qi].opts[oi].charge).length;
+  return {s,pct,top,meta,steady,tot};
+}
+
+function battery(n){const col=n===3?"var(--aarav)":n===2?"var(--kabir)":"var(--zoya)";
+  return `<div class="batt"><div class="cell">${[1,2,3].map(i=>`<i style="background:${i<=n?col:'transparent'}"></i>`).join("")}</div><div class="nub"></div></div>`;}
+
+function result(){
+  const r=score(picks), c=CHAR[r.top], pk=PEAK[r.meta.peak||"afternoon"];
+  const sleepTxt={3:"Full battery. You slept early.",2:"Half battery. A late-ish night.",1:"Low battery. Midnight is expensive."}[r.meta.sleep||2];
+  const order=["a","z","k"].sort((x,y)=>r.pct[y]-r.pct[x]);
+  const blocks=[["Morning","wake up to leaving for school"],["School hours",""],["After school","until evening"],["Evening","until dinner"],["Night","after dinner until sleep"]];
+  app.innerHTML=`
+  <section class="panel pop">
+    <div class="res-head"><div class="label">Your time profile</div><h2>You're most like ${c.name}</h2></div>
+    <div class="match">
+      <img class="portrait" src="${IMG[c.img]}" alt="${c.name}">
+      <div>
+        <span class="tag" style="background:${c.color}">${c.tag}</span>
+        <p>${c.about}</p>
+        <p><b>Your strong side:</b> ${c.strong}</p>
+        <p><b>Watch out for:</b> ${c.watch}</p>
+        <p class="quote">${c.quote}</p>
+      </div>
+    </div>
+    <div class="blend" aria-label="Your mix">
+      <div class="label">Your mix</div>
+      ${order.map(k=>`<div class="bar"><img src="${IMG[CHAR[k].img]}" alt=""><span>${CHAR[k].name}</span><div class="track"><div class="fill" data-w="${r.pct[k]}" style="width:0;background:${CHAR[k].color}"></div></div><span class="num">${r.pct[k]}%</span></div>`).join("")}
+      ${r.steady>=3?`<p class="fine" style="margin:4px 0 0">You picked the steady answer ${r.steady} times. Nice. The tracker below will show if your days match.</p>`:""}
+    </div>
+  </section>
+
+  <div class="grid2">
+    <section class="panel card">
+      <div class="label">Your battery today</div>
+      <div class="row">${battery(r.meta.sleep||2)}<span class="big">${{3:"High",2:"Medium",1:"Low"}[r.meta.sleep||2]}</span></div>
+      <p style="margin:0">${sleepTxt}</p>
+      <p class="quote" style="margin:0">SAMAY: “Yesterday's choices create today's energy.”</p>
+    </section>
+    <section class="panel card">
+      <div class="label">Your power hour</div>
+      <div class="big">${pk[0]}</div>
+      <p style="margin:0">${pk[1]}</p>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:20px">
+    <div class="card">
+      <div class="label">Your four pillars</div>
+      <div class="chips">
+        <span class="chip" style="background:${PILLAR[r.meta.drain]}">Drains you: ${r.meta.drain} energy</span>
+        <span class="chip" style="background:${PILLAR[r.meta.charge]}">Charges you: ${r.meta.charge} energy</span>
+      </div>
+      <p style="margin:0">When your ${r.meta.drain.toLowerCase()} battery runs low, reach for something that builds ${r.meta.charge.toLowerCase()} energy.</p>
+    </div>
+    <img class="pillars" src="${IMG.pillars}" alt="The four pillars: physical, emotional, mental and spiritual energy">
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <div class="card"><div class="samay-row"><img src="${IMG.samay2}" alt="SAMAY"><div class="bubble"><b>Your mission for tomorrow.</b> At the end of each part of your day, tap your energy: <b>L</b>ow, <b>M</b>edium or <b>H</b>igh. Tomorrow night, look for your highest block.</div></div></div>
+    <div class="tracker">
+      ${blocks.map((b,i)=>`<div class="trow"><span>${b[0]}${b[1]?`<small>${b[1]}</small>`:""}</span><div class="lvl" role="group" aria-label="${b[0]} energy">${["L","M","H"].map(l=>`<button class="${l}" aria-pressed="false" data-row="${i}">${l}</button>`).join("")}</div></div>`).join("")}
+    </div>
+    <div class="foot">
+      <p style="margin:0"><b>This is your pattern right now, not who you are.</b> Take this again in three weeks and see what changed. Everything is a choice, and change is in your hands.</p>
+      <div class="row"><button class="btn" id="again">Take it again</button><button class="btn ghost" id="copy">Copy my profile</button><span class="toast" id="toast"></span></div>
+    </div>
+  </section>`;
+  requestAnimationFrame(()=>setTimeout(()=>app.querySelectorAll('.fill').forEach(f=>f.style.width=f.dataset.w+"%"),60));
+  app.querySelectorAll('.lvl button').forEach(b=>b.onclick=()=>{
+    b.parentElement.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+    track('tracker_tap',{block:blocks[+b.dataset.row][0],level:b.textContent});});
+  if(!result.logged){result.logged=true;
+    track('quiz_complete',{picks:picks.slice(),top:r.top,pct:r.pct,meta:r.meta,steady:r.steady});
+    store.set('lastResult',{date:today(),top:r.top,pct:r.pct,peak:r.meta.peak});}
+  document.getElementById('again').onclick=()=>{step=-1;picks=[];result.logged=false;track('retake');render();window.scrollTo({top:0});};
+  document.getElementById('copy').onclick=()=>{
+    const txt=`My DOTX time profile: most like ${c.name} (${c.tag}). Mix: Aarav ${r.pct.a}%, Zoya ${r.pct.z}%, Kabir ${r.pct.k}%. Power hour: ${pk[0]}. Drains me: ${r.meta.drain}. Charges me: ${r.meta.charge}.`;
+    const t=document.getElementById('toast');
+    navigator.clipboard.writeText(txt).then(()=>t.textContent="Copied").catch(()=>t.textContent=txt);
+  };
+}
+
+/* ---------- Day-2 check-in: shown when this device finished the quiz on an earlier day ---------- */
+const BLOCKS=["Morning","School hours","After school","Evening","Night"];
+const PEAK_BLOCK={morning:"Morning",school:"School hours",afternoon:"After school",night:"Night"};
+let checkinDone=false;
+function checkin(last){
+  const c=CHAR[last.top];
+  app.innerHTML=`<section class="panel pop">
+    <div class="qtop"><span class="count">Welcome back</span><button id="skip">Skip</button></div>
+    <div class="qbody">
+      <div class="samay-row"><img src="${IMG.samay2}" alt="SAMAY"><div class="bubble">Hi again! Last time you were most like <b>${c.name}</b>. Quick check-in: <b>which part of yesterday had your highest energy?</b></div></div>
+      <div class="opts">${BLOCKS.map((b,i)=>`<button class="opt" data-b="${i}"><span class="k">${"ABCDE"[i]}</span><span>${b}</span></button>`).join("")}
+        <button class="opt" data-b="-1"><span class="k">?</span><span>I didn't notice<small>That's fine. Today, try the tracker.</small></span></button></div>
+    </div></section>`;
+  document.getElementById('skip').onclick=()=>{checkinDone=true;track('checkin_skip');render();};
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.b, guess=PEAK_BLOCK[last.peak], actual=i>=0?BLOCKS[i]:null;
+    track('checkin',{highest:actual,guessed:guess,days_since:daysSince(last.date)});
+    const msg=!actual?"No problem. Noticing is a skill. Today, tap your energy after each part of the day."
+      :actual===guess?`You guessed <b>${guess}</b> in the quiz, and your day agreed. You know yourself well.`
+      :`In the quiz you said <b>${guess||"another time"}</b> was your best time. Yesterday it was <b>${actual}</b>. Interesting! Watch it again today.`;
+    app.innerHTML=`<section class="panel pop"><div class="qbody">
+      <div class="samay-row"><img src="${IMG.samay2}" alt="SAMAY"><div class="bubble">${msg}</div></div>
+      <div class="row"><button class="btn" id="go">See my profile again</button></div></div></section>`;
+    document.getElementById('go').onclick=()=>{checkinDone=true;step=-1;render();};
+  });
+}
+
+function render(){
+  if(step<0){const last=store.get('lastResult');
+    if(!checkinDone&&last&&last.date<today()){checkin(last);return;}
+    cover();}
+  else if(step<Q.length)question(); else result();
+}
+
+/* ---------- Anonymous tracking: random device id, no name, no email ---------- */
+function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function daysSince(s){return Math.round((new Date(today())-new Date(s))/864e5);}
+const store={get(k){try{return JSON.parse(localStorage.getItem('dotx_'+k));}catch(e){return null;}},
+  set(k,v){try{localStorage.setItem('dotx_'+k,JSON.stringify(v));}catch(e){}}};
+const DEVICE=(()=>{let id=store.get('device');if(!id){id=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2));store.set('device',id);}return id;})();
+const CLASS=(()=>{const c=new URLSearchParams(location.search).get('class');if(c)store.set('class',c.slice(0,40));return store.get('class');})();
+function track(type,payload){
+  const cfg=window.DOTX_CONFIG||{};
+  if(!cfg.SUPABASE_URL||!cfg.SUPABASE_ANON_KEY)return;
+  try{fetch(cfg.SUPABASE_URL+"/rest/v1/events",{method:"POST",keepalive:true,
+    headers:{"apikey":cfg.SUPABASE_ANON_KEY,"Authorization":"Bearer "+cfg.SUPABASE_ANON_KEY,"Content-Type":"application/json","Prefer":"return=minimal"},
+    body:JSON.stringify({device_id:DEVICE,class_code:CLASS,type,payload:payload||{}})}).catch(()=>{});}catch(e){}
+}
+
+track('page_view',{ref:document.referrer?new URL(document.referrer).hostname:null,returning:!!store.get('lastResult')});
+render();
+</script>
+</body>
+</html>
