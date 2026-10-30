@@ -97,6 +97,19 @@ button:focus-visible,.opt:focus-visible{outline:3px solid var(--samay);outline-o
 .opt small{display:block;font-weight:400;font-size:15px;color:inherit;opacity:.8}
 .pill{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-radius:3px;vertical-align:-2px;margin-right:6px}
 
+/* about-you form */
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:560px){.fields{grid-template-columns:1fr}}
+.fld{display:grid;gap:4px;font-weight:700;min-width:0;border:0;padding:0;margin:0}
+.fld.wide{grid-column:1/-1}
+.fld legend{padding:0;margin-bottom:6px}
+.fld input,.fld select{font:400 18px var(--body);color:var(--ink);background:var(--paper);border:3px solid var(--line);border-radius:4px;padding:9px 10px;width:100%}
+.fld input:focus,.fld select:focus{outline:3px solid var(--samay);outline-offset:1px}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.pick{font:700 16px var(--body);color:var(--ink);background:var(--paper);border:3px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+.pick[aria-pressed="true"]{background:var(--kabir);color:#17132b}
+.err{color:var(--zoya);font-weight:700;margin:0}
+
 /* result */
 .res-head{padding:18px 18px 6px}
 .match{display:grid;grid-template-columns:minmax(0,200px) minmax(0,1fr);gap:18px;padding:12px 18px 22px;align-items:start}
@@ -195,9 +208,44 @@ function cover(){
         ${["a","z","k"].map(c=>`<figure><img src="${IMG[CHAR[c].img]}" alt="${CHAR[c].name}"><figcaption>${CHAR[c].name}?</figcaption></figure>`).join("")}
       </div>
       <p style="margin:0">Same morning, same time, totally different energy. Which one are you most like?</p>
-      <div class="row"><button class="btn" id="start">Start</button><span class="fine">No sign-up. We save your answers without your name, to make SAMAY better.</span></div>
+      <div class="row"><button class="btn" id="start">Start</button><span class="fine">Takes 3 minutes. Ask a parent or teacher before you share your name.</span></div>
     </div></section>`;
-  document.getElementById('start').onclick=()=>{step=0;picks=[];track('quiz_start');render();};
+  document.getElementById('start').onclick=()=>{picks=[];track('quiz_start');aboutYou();window.scrollTo({top:0});};
+}
+
+/* ---------- About you: shown once before the questions ---------- */
+const DISTRACT=["Phone and videos","Games","Friends and chatting","TV","Noise at home","My own thoughts","Something else"];
+function aboutYou(){
+  const me=store.get('me')||{};
+  app.innerHTML=`<section class="panel pop">
+    <div class="qtop"><span class="count">About you</span><button id="back">← Back</button></div>
+    <form class="qbody" id="me" novalidate>
+      <div class="samay-row"><img src="${IMG.watch}" alt="SAMAY"><div class="bubble">Before we start, tell me a little about you.</div></div>
+      <div class="fields">
+        <label class="fld"><span>Your first name *</span><input id="f-name" maxlength="30" autocomplete="given-name" value="${esc(me.name||"")}" required></label>
+        <label class="fld"><span>Age *</span><select id="f-age" required><option value="">Choose</option>${[8,9,10,11,12,13,14,15,16,17].map(a=>`<option ${me.age==a?"selected":""}>${a}</option>`).join("")}</select></label>
+        <label class="fld"><span>School</span><input id="f-school" maxlength="80" value="${esc(me.school||"")}"></label>
+        <label class="fld"><span>City</span><input id="f-city" maxlength="40" autocomplete="address-level2" value="${esc(me.city||"")}"></label>
+        <label class="fld wide"><span>Who do you want to be when you grow up?</span><input id="f-dream" maxlength="80" placeholder="A doctor, a cricketer, an artist…" value="${esc(me.dream||"")}"></label>
+      </div>
+      <fieldset class="fld wide"><legend>What distracts you the most?</legend>
+        <div class="chiprow">${DISTRACT.map(d=>`<button type="button" class="pick" aria-pressed="${me.distraction===d}">${d}</button>`).join("")}</div>
+        <input id="f-other" maxlength="60" placeholder="Tell SAMAY what it is" value="${esc(me.other||"")}" ${me.distraction==="Something else"?"":"hidden"}>
+      </fieldset>
+      <p class="err" id="err" hidden>Please add your first name and age.</p>
+      <div class="row"><button class="btn" type="submit">Next</button></div>
+    </form></section>`;
+  let pick=me.distraction||null;
+  app.querySelector('#me').addEventListener('input',()=>{document.getElementById('err').hidden=true;});
+  document.getElementById('back').onclick=()=>{step=-1;render();};
+  app.querySelectorAll('.pick').forEach(b=>b.onclick=()=>{pick=b.textContent;
+    app.querySelectorAll('.pick').forEach(x=>x.setAttribute('aria-pressed',x===b));
+    document.getElementById('f-other').hidden=pick!=="Something else";});
+  document.getElementById('me').onsubmit=e=>{e.preventDefault();
+    const v=id=>document.getElementById(id).value.trim();
+    const d={name:v('f-name'),age:+v('f-age')||null,school:v('f-school'),city:v('f-city'),dream:v('f-dream'),distraction:pick,other:pick==="Something else"?v('f-other'):""};
+    if(!d.name||!d.age){document.getElementById('err').hidden=false;return;}
+    store.set('me',d);track('profile',d);step=0;render();window.scrollTo({top:0});};
 }
 
 function question(){
@@ -212,7 +260,7 @@ function question(){
         const sw=q.opts[0].drain||q.opts[0].charge?`<span class="pill" style="background:${PILLAR[o.drain||o.charge]}"></span>`:"";
         return `<button class="opt ${picks[step]===i?'picked':''}" data-i="${i}"><span class="k">${"ABCD"[i]}</span><span>${sw}${esc(o.t)}${o.s?`<small>${esc(o.s)}</small>`:""}</span></button>`}).join("")}</div>
     </div></section>`;
-  document.getElementById('back').onclick=()=>{step--;render();};
+  document.getElementById('back').onclick=()=>{if(step===0){aboutYou();return;}step--;render();};
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
     picks[step]=+b.dataset.i; b.classList.add('picked');
     track('answer',{q:step,opt:picks[step]});
@@ -241,7 +289,7 @@ function result(){
   const blocks=[["Morning","wake up to leaving for school"],["School hours",""],["After school","until evening"],["Evening","until dinner"],["Night","after dinner until sleep"]];
   app.innerHTML=`
   <section class="panel pop">
-    <div class="res-head"><div class="label">Your time profile</div><h2>You're most like ${c.name}</h2></div>
+    <div class="res-head"><div class="label">Your time profile</div><h2>${(store.get('me')||{}).name?esc(store.get('me').name)+", you're":"You're"} most like ${c.name}</h2></div>
     <div class="match">
       <img class="portrait" src="${IMG[c.img]}" alt="${c.name}">
       <div>
@@ -344,7 +392,7 @@ function render(){
   else if(step<Q.length)question(); else result();
 }
 
-/* ---------- Anonymous tracking: random device id, no name, no email ---------- */
+/* ---------- Tracking: random device id; the About-you form adds name and age ---------- */
 function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function daysSince(s){return Math.round((new Date(today())-new Date(s))/864e5);}
 const store={get(k){try{return JSON.parse(localStorage.getItem('dotx_'+k));}catch(e){return null;}},
@@ -354,7 +402,7 @@ const CLASS=(()=>{const c=new URLSearchParams(location.search).get('class');if(c
 function track(type,payload){
   const cfg=window.DOTX_CONFIG||{};
   if(!cfg.SUPABASE_URL||!cfg.SUPABASE_ANON_KEY)return;
-  try{fetch(cfg.SUPABASE_URL+"/rest/v1/events",{method:"POST",keepalive:true,
+  try{fetch(cfg.SUPABASE_URL+"/rest/v1/events",{method:"POST",
     headers:{"apikey":cfg.SUPABASE_ANON_KEY,"Authorization":"Bearer "+cfg.SUPABASE_ANON_KEY,"Content-Type":"application/json","Prefer":"return=minimal"},
     body:JSON.stringify({device_id:DEVICE,class_code:CLASS,type,payload:payload||{}})}).catch(()=>{});}catch(e){}
 }

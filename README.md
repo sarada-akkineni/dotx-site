@@ -17,10 +17,12 @@ The quiz site for quiz.dotx.gg. A static site: no build step.
 3. To undo: Vercel > Deployments > pick an older one > "Promote to Production". Or `git revert`.
 
 ## Data
-Anonymous only: a random id per browser, the class code from the link (`?class=AKA-8B`), and quiz events.
-No names, emails or IP addresses are stored. Visitors can add events but never read them.
+A random id per browser, the class code from the link (`?class=AKA-8B`), quiz events, and the About-you form
+(first name, age, school, city, who they want to be, main distraction). No emails, phone numbers or IP addresses.
+Visitors can add events but never read them. Only the owner can read, on results.html.
+This is children's personal data: run pilots through schools, with a note to parents.
 
-Event types: `page_view`, `quiz_start`, `answer`, `quiz_complete`, `retake`, `tracker_tap`, `checkin`, `checkin_skip`.
+Event types: `page_view`, `quiz_start`, `profile`, `answer`, `quiz_complete`, `retake`, `tracker_tap`, `checkin`, `checkin_skip`.
 
 ## Rules for editing questions
 Old answers are stored by question and option number. Do not reorder questions or options.

@@ -7,7 +7,7 @@ create table if not exists public.events (
   device_id   text not null check (char_length(device_id) <= 64),   -- random id per browser, no personal data
   class_code  text check (char_length(class_code) <= 40),            -- from ?class= in the link, e.g. AKA-8B
   type        text not null check (type in (
-                'page_view','quiz_start','answer','quiz_complete','retake',
+                'page_view','quiz_start','profile','answer','quiz_complete','retake',
                 'tracker_tap','checkin','checkin_skip')),
   payload     jsonb not null default '{}'::jsonb check (pg_column_size(payload) < 4000)
 );
