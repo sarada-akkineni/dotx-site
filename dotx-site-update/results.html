@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>DOTX Quiz Results</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap">
+<script src="config.js"></script>
+<script src="questions.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#e6f2fb;--paper:#fff;--ink:#17132b;--muted:#4d4868;--line:#17132b;--samay:#7a4cc8;--soft:#efe7fb;
+  --aarav:#6db83c;--zoya:#d43a3f;--kabir:#f2c230;
+  --display:"Bangers",Impact,sans-serif;--body:"Comic Neue","Comic Sans MS",sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#141127;--paper:#221d3d;--ink:#f3f0ff;--muted:#bdb6dd;--line:#e9e4ff;--samay:#b693f2;--soft:#2e2552;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 var(--body)}
+.wrap{max-width:980px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-left)) 60px}
+h1,h2{font-family:var(--display);font-weight:400;letter-spacing:.5px;margin:0}
+h1{font-size:40px}h2{font-size:26px;margin-bottom:10px}
+.panel{background:var(--paper);border:3px solid var(--line);box-shadow:5px 5px 0 var(--line);padding:16px 18px;margin-top:18px;overflow-x:auto}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.kpi .n{font-family:var(--display);font-size:44px;line-height:1;font-variant-numeric:tabular-nums}
+.kpi .l{font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi .s{font-size:14px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+td,th{padding:6px 8px;border-bottom:1px solid var(--muted);text-align:left;vertical-align:top}
+.bar{height:14px;background:var(--samay);border:2px solid var(--line);min-width:2px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+input,select,button{font:700 16px var(--body);padding:8px 12px;border:3px solid var(--line);background:var(--paper);color:var(--ink)}
+button{background:var(--samay);color:#fff;cursor:pointer}
+.muted{color:var(--muted);font-size:14px}
+.q{font-weight:700;margin:14px 0 4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row" style="justify-content:space-between"><h1>Find Your Time · Results</h1><span id="who" class="muted"></span></div>
+  <div id="app" class="panel">Loading…</div>
+</div>
+<script>
+const cfg=window.DOTX_CONFIG||{};
+const app=document.getElementById('app');
+const NAMES={a:"Aarav",z:"Zoya",k:"Kabir"};
+if(!cfg.SUPABASE_URL){app.textContent="Not connected to the database yet (config.js is empty).";}
+else{
+const sb=supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
+sb.auth.getSession().then(({data})=>data.session?load(data.session):login());
+
+function login(){
+  app.innerHTML=`<h2>Sign in</h2><p>Enter your email. You'll get a sign-in link.</p>
+   <form id="f" class="row"><input id="em" type="email" required placeholder="you@example.com" style="min-width:0;flex:1"><button>Send link</button></form><p id="msg" class="muted"></p>`;
+  document.getElementById('f').onsubmit=async e=>{e.preventDefault();
+    const {error}=await sb.auth.signInWithOtp({email:document.getElementById('em').value,options:{emailRedirectTo:location.origin+location.pathname}});
+    document.getElementById('msg').textContent=error?error.message:"Check your email for the link.";};
+}
+
+async function load(session){
+  document.getElementById('who').innerHTML=`${session.user.email} · <a href="#" id="signout">Sign out</a>`;
+  document.getElementById("signout").onclick=async e=>{e.preventDefault();await sb.auth.signOut();location.reload();};
+  let rows=[],from=0;
+  while(true){const {data,error}=await sb.from('events').select('*').order('id').range(from,from+999);
+    if(error){app.textContent="Could not read data: "+error.message;return;}
+    rows=rows.concat(data);if(data.length<1000)break;from+=1000;}
+  const classes=[...new Set(rows.map(r=>r.class_code).filter(Boolean))].sort();
+  app.outerHTML=`<div class="panel row"><label for="cls"><b>Class</b></label><select id="cls"><option value="">All visitors</option>${classes.map(c=>`<option>${c}</option>`).join("")}</select><span class="muted">${rows.length} events recorded</span></div><div id="out"></div>`;
+  const draw=()=>render(rows.filter(r=>!cls.value||r.class_code===cls.value));
+  const cls=document.getElementById('cls');cls.onchange=draw;draw();
+}
+
+const ist=d=>new Date(new Date(d).getTime()+5.5*3600e3).toISOString().slice(0,10);
+const uniq=(rows,t)=>new Set(rows.filter(r=>!t||r.type===t).map(r=>r.device_id));
+const pct=(a,b)=>b?Math.round(100*a/b)+"%":"–";
+
+function render(rows){
+  const vis=uniq(rows,'page_view'),start=uniq(rows,'quiz_start'),done=uniq(rows,'quiz_complete');
+  // came back: finished the quiz, then any visit on a later day (IST)
+  const firstDone={};rows.filter(r=>r.type==='quiz_complete').forEach(r=>{const d=ist(r.created_at);if(!firstDone[r.device_id]||d<firstDone[r.device_id])firstDone[r.device_id]=d;});
+  const back=new Set(rows.filter(r=>firstDone[r.device_id]&&ist(r.created_at)>firstDone[r.device_id]).map(r=>r.device_id));
+  const checkins=rows.filter(r=>r.type==='checkin');
+  // latest result per device
+  const last={};rows.filter(r=>r.type==='quiz_complete').forEach(r=>last[r.device_id]=r.payload);
+  const res=Object.values(last);const top={a:0,z:0,k:0};res.forEach(p=>top[p.top]++);
+  // answers: latest answer per device per question
+  const ans={};rows.filter(r=>r.type==='answer').forEach(r=>{ans[r.device_id+"|"+r.payload.q]=r.payload;});
+  const qc=Q.map(q=>q.opts.map(()=>0)),reach=Q.map(()=>new Set());
+  Object.entries(ans).forEach(([k,p])=>{if(qc[p.q]){qc[p.q][p.opt]++;reach[p.q].add(k.split("|")[0]);}});
+  const days={};rows.filter(r=>r.type==='page_view').forEach(r=>{const d=ist(r.created_at);(days[d]=days[d]||new Set()).add(r.device_id);});
+  const blocks={};checkins.forEach(r=>{const h=r.payload.highest||"Didn't notice";blocks[h]=(blocks[h]||0)+1;});
+  const matched=checkins.filter(r=>r.payload.highest&&r.payload.highest===r.payload.guessed).length;
+  const taps=rows.filter(r=>r.type==='tracker_tap');
+  const prof={};rows.filter(r=>r.type==='profile').forEach(r=>prof[r.device_id]={...r.payload,class_code:r.class_code,when:ist(r.created_at)});
+  const dis={};Object.values(prof).forEach(p=>{const k=p.distraction==="Something else"&&p.other?"Other: "+p.other:(p.distraction||"Not answered");dis[k]=(dis[k]||0)+1;});
+  const e=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const barRow=(label,n,max)=>`<tr><td>${label}</td><td style="width:50%"><div class="bar" style="width:${max?Math.max(1,100*n/max):0}%"></div></td><td>${n}</td></tr>`;
+
+  document.getElementById('out').innerHTML=`
+  <div class="panel kpis">
+    <div class="kpi"><div class="l">Visitors</div><div class="n">${vis.size}</div><div class="s">different devices</div></div>
+    <div class="kpi"><div class="l">Started quiz</div><div class="n">${start.size}</div><div class="s">${pct(start.size,vis.size)} of visitors</div></div>
+    <div class="kpi"><div class="l">Finished</div><div class="n">${done.size}</div><div class="s">${pct(done.size,start.size)} of starters</div></div>
+    <div class="kpi"><div class="l">Came back next day+</div><div class="n">${back.size}</div><div class="s">${pct(back.size,done.size)} of finishers</div></div>
+    <div class="kpi"><div class="l">Check-ins</div><div class="n">${checkins.length}</div><div class="s">${pct(matched,checkins.filter(r=>r.payload.highest).length)} matched their quiz guess</div></div>
+    <div class="kpi"><div class="l">Tracker taps</div><div class="n">${taps.length}</div><div class="s">${uniq(taps).size} devices used it</div></div>
+  </div>
+  <div class="panel"><h2>Children (${Object.keys(prof).length})</h2><table><tr><th>Name</th><th>Age</th><th>School</th><th>City</th><th>Wants to be</th><th>Distracted by</th><th>Most like</th><th>Came back</th><th>Date</th></tr>
+    ${Object.entries(prof).sort((x,y)=>y[1].when.localeCompare(x[1].when)).map(([d,p])=>`<tr><td>${e(p.name)}</td><td>${e(p.age)}</td><td>${e(p.school)}</td><td>${e(p.city)}</td><td>${e(p.dream)}</td><td>${e(p.distraction==="Something else"&&p.other?p.other:p.distraction)}</td><td>${last[d]?NAMES[last[d].top]:"Not finished"}</td><td>${back.has(d)?"Yes":""}</td><td>${p.when}</td></tr>`).join("")||"<tr><td class='muted' colspan='9'>No one yet.</td></tr>"}</table></div>
+  <div class="panel"><h2>What distracts them most</h2><table>${Object.entries(dis).sort((x,y)=>y[1]-x[1]).map(([k,n])=>barRow(e(k),n,Math.max(...Object.values(dis)))).join("")||"<tr><td class='muted'>No answers yet.</td></tr>"}</table></div>
+  <div class="panel"><h2>Who they're most like</h2><table>${["a","z","k"].map(c=>barRow(NAMES[c],top[c],Math.max(...Object.values(top)))).join("")}</table></div>
+  <div class="panel"><h2>Where children stop</h2><p class="muted">How many devices answered each question.</p><table>${Q.map((q,i)=>barRow(`${i+1}. ${q.q.slice(0,60)}${q.q.length>60?"…":""}`,reach[i].size,start.size||1)).join("")}</table></div>
+  <div class="panel"><h2>Answers to each question</h2>${Q.map((q,i)=>{const m=Math.max(1,...qc[i]);return `<div class="q">${i+1}. ${q.q}</div><table>${q.opts.map((o,j)=>barRow(o.t,qc[i][j],m)).join("")}</table>`}).join("")}</div>
+  <div class="panel"><h2>Day-2 check-in: highest energy yesterday</h2><table>${Object.entries(blocks).sort((a,b)=>b[1]-a[1]).map(([k,n])=>barRow(k,n,Math.max(...Object.values(blocks)))).join("")||"<tr><td class='muted'>No check-ins yet.</td></tr>"}</table></div>
+  <div class="panel"><h2>Visitors per day (India time)</h2><table>${Object.keys(days).sort().reverse().slice(0,30).map(d=>barRow(d,days[d].size,Math.max(...Object.values(days).map(s=>s.size)))).join("")||"<tr><td class='muted'>No visits yet.</td></tr>"}</table></div>`;
+}
+}
+</script>
+</body>
+</html>
